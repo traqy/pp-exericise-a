@@ -83,7 +83,10 @@ function get_average_PSI(all_readings){
         for (j=0; j<summary[region].length; j++){
             sum+=summary[region][j];
         }
-        avg_psi[region] = sum/j;
+        var avg = sum/j;
+        avg_psi[region] = Math.round(avg * 10) / 10;
+
+        //avg_psi[region] = sum/j;
     }
     return avg_psi;
 
@@ -129,7 +132,15 @@ asyncLoop(datetime_hours_list, function (item, next)
     }
  
     exports.psi_data = all_readings;
-    exports.average_psi = get_average_PSI(all_readings);
+
+    var average_psi_array = get_average_PSI(all_readings);
+    console.log(JSON.stringify(average_psi_array));
+    var average_psi_str = '<ol>';
+    for (var k in average_psi_array){
+        average_psi_str += '<li>' +  k + ':' +  average_psi_array[k] +'</li>'
+    }
+    average_psi_str += '</ol>';
+    exports.average_psi = average_psi_str;
     console.log('Finished!');
 });
 
