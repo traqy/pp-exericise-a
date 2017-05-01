@@ -1,32 +1,38 @@
 var https = require('https');
 
 // test passing data to controller 
-exports.average_psi = 88;
+//exports.average_psi = 88;
 
-// Get current date and time  YYYY-mm-ddTHH:Min:S format
 
-var today  = new Date();
-var year = today.getFullYear();
-var month = today.getMonth() + 1;
-var day = today.getDate();
-var dd = (day>9 ? '': '0') + day;
-var mm = (month>9 ? '': '0') + month;
-var date = year + '-' + mm + '-' + dd;
+function getLast_N_Hours_DateTimes( last_number_of_hours ){
 
-// Temporary PSI api call
-var http = require('https'),
-    url = require('url');
+    datetime_list = []
 
-var opts = url.parse('https://api.data.gov.sg/v1/environment/psi?date_time=2017-05-02T01%3A25%3A15&date=2017-05-02'),
-    data = { title: 'Test' };
-opts.headers = {};
-opts.headers['Content-Type'] = 'application/json';
-opts.headers['api-key'] = 'wF6sWKjwfrGdfsWz9tCe4nFjsuS0nTLF';
-opts.headers['method'] = 'GET';
+    var today  = new Date();
+    for (i=0;i<last_number_of_hours;i++){
+        dt = new Date( today.getTime() - (1000 * 60 * 60 * i ) );
+        console.log(dt);
+        var year = dt.getFullYear();
+        var month = dt.getMonth() + 1;
+        var day = dt.getDate();
+        var dd = (day>9 ? '': '0') + day;
+        var mm = (month>9 ? '': '0') + month;
 
-function getPSI(options, cb) {
+        var hour = dt.getHours();
+        var HH = (hour>9 ? '': '0') + hour;
 
-    http.request(opts, function(res) {
+        var query_dt=year + '-' + mm + '-' + dd + 'T' + HH + ':00:00';
+
+        datetime_list.push( query_dt )
+    }
+    return datetime_list;
+}
+
+var data = { title: 'Test' };
+
+function getPSI(opts, cb) {
+
+    https.request(opts, function(res) {
       var body = '';
 
         res.on('data', function(chunk){
@@ -44,11 +50,58 @@ function getPSI(options, cb) {
     }).end(JSON.stringify(data));
 }
 
-getPSI( opts, function(err, result){
-    if (err){
-        return console.log('Error while trying to get the PSI data.', err);
+function getPSIReadingObject(json_object_result){
+    var readings = json_object_result['items'][0]['readings']['psi_twenty_four_hourly'];
+    return JSON.stringify(readings);
+    //for ( var key in json_object_result['items'] ){
+    //}
+    
+}
+
+var datetime_hours_list = getLast_N_Hours_DateTimes(3);
+
+var all_psi_data = '';
+var all_readings = [];
+i=0;
+var dt = datetime_hours_list[i];
+
+var asyncLoop = require('node-async-loop');
+asyncLoop(datetime_hours_list, function (item, next)
+{
+    var dt = item;
+    var date = dt.substr(0,10);
+    var query_param = 'date_time=' + encodeURI(dt) + '&' + 'date=' + encodeURI(date);
+
+    // Temporary PSI api call
+    var http = require('https'),
+        url = require('url');
+
+    var opts = url.parse('https://api.data.gov.sg/v1/environment/psi?' + query_param ),
+        data = { title: 'Test' };
+    opts.headers = {};
+    opts.headers['Content-Type'] = 'application/json';
+    opts.headers['api-key'] = 'wF6sWKjwfrGdfsWz9tCe4nFjsuS0nTLF';
+    opts.headers['method'] = 'GET';
+
+    getPSI( opts, function(err, result){    
+        if (err)
+        {
+            next(err);
+            return;
+        }
+        var readings = getPSIReadingObject(result);
+        all_readings.push(readings);
+        next();
+    });
+}, function (err)
+{
+    if (err)
+    {
+        console.error('Error: ' + err.message);
+        return;
     }
-    console.log(result);
-    exports.psi_data = JSON.stringify(result);
+ 
+    exports.psi_data = JSON.stringify(all_readings);
+    console.log('Finished!');
 });
 
