@@ -3,6 +3,7 @@ var https = require('https');
 // test passing data to controller 
 //exports.average_psi = 88;
 
+var REGIONS = ['east', 'central', 'south', 'north', 'west', 'national'];
 
 function getLast_N_Hours_DateTimes( last_number_of_hours ){
 
@@ -11,7 +12,7 @@ function getLast_N_Hours_DateTimes( last_number_of_hours ){
     var today  = new Date();
     for (i=0;i<last_number_of_hours;i++){
         dt = new Date( today.getTime() - (1000 * 60 * 60 * i ) );
-        console.log(dt);
+        //console.log(dt);
         var year = dt.getFullYear();
         var month = dt.getMonth() + 1;
         var day = dt.getDate();
@@ -52,19 +53,45 @@ function getPSI(opts, cb) {
 
 function getPSIReadingObject(json_object_result){
     var readings = json_object_result['items'][0]['readings']['psi_twenty_four_hourly'];
-    return JSON.stringify(readings);
-    //for ( var key in json_object_result['items'] ){
-    //}
-    
+    //return JSON.stringify(readings);
+    return readings;    
+}
+
+function get_average_PSI(all_readings){
+
+    var summary = { }
+    for( var i=0; i<REGIONS.length; i++ ){
+        summary[REGIONS[i]] = [];
+    }
+
+    for(var i=0; i< all_readings.length; i++){
+        readings = all_readings[i];
+        summary['east'].push(readings['east']);
+        summary['central'].push(readings['central']);
+        summary['south'].push(readings['south']);
+        summary['north'].push(readings['north']);
+        summary['west'].push(readings['west']);
+        summary['national'].push(readings['national']);
+    }
+
+    avg_psi = {};
+    for( var i=0; i<REGIONS.length; i++ ){
+        var region = REGIONS[i];
+        var sum=0;
+        var j=0
+
+        for (j=0; j<summary[region].length; j++){
+            sum+=summary[region][j];
+        }
+        avg_psi[region] = sum/j;
+    }
+    return avg_psi;
+
 }
 
 var datetime_hours_list = getLast_N_Hours_DateTimes(3);
-
 var all_psi_data = '';
 var all_readings = [];
-i=0;
-var dt = datetime_hours_list[i];
-
 var asyncLoop = require('node-async-loop');
 asyncLoop(datetime_hours_list, function (item, next)
 {
@@ -101,7 +128,8 @@ asyncLoop(datetime_hours_list, function (item, next)
         return;
     }
  
-    exports.psi_data = JSON.stringify(all_readings);
+    exports.psi_data = all_readings;
+    exports.average_psi = get_average_PSI(all_readings);
     console.log('Finished!');
 });
 
