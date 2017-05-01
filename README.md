@@ -4,8 +4,21 @@
  * Package modules
  
 ```
-npm install 
+npm install express
+npm install node-async-loop
+```
+
+# Lunching the Web App
+ * Run the node server.js with npm start.
+ 
+```
+npm start
+
+> node server.js
+
+listening to http://127.0.0.1:8899
 ```
 
 
-# Start 
+# Test the service
+ * Browse http://localhost:8899/
