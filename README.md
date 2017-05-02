@@ -6,6 +6,7 @@
 ```
 npm install express
 npm install node-async-loop
+npm install config
 ```
 
 # Lunching the Web App
