@@ -1,7 +1,17 @@
+var config = require('config');
 var https = require('https');
 
 // test passing data to controller 
 //exports.average_psi = 88;
+
+var API_URL = config.get('PSI.apiConfig.url');
+var API_KEY = config.get('PSI.apiConfig.key');
+var WEBSITE_TITLE = config.get('PSI.website.siteTitle');
+var data = { title: WEBSITE_TITLE };
+
+exports.average_psi_website_title = WEBSITE_TITLE;
+exports.average_psi_website_page_title = config.get('PSI.website.pageTitle');
+console.log(config.get('PSI.website.siteTitle'));
 
 var REGIONS = ['east', 'central', 'south', 'north', 'west', 'national'];
 
@@ -29,7 +39,6 @@ function getLast_N_Hours_DateTimes( last_number_of_hours ){
     return datetime_list;
 }
 
-var data = { title: 'Test' };
 
 function getPSI(opts, cb) {
 
@@ -106,11 +115,11 @@ asyncLoop(datetime_hours_list, function (item, next)
     var http = require('https'),
         url = require('url');
 
-    var opts = url.parse('https://api.data.gov.sg/v1/environment/psi?' + query_param ),
-        data = { title: 'Test' };
+    var opts = url.parse( API_URL + query_param ),
+        data = { title: 'PSI' };
     opts.headers = {};
     opts.headers['Content-Type'] = 'application/json';
-    opts.headers['api-key'] = 'wF6sWKjwfrGdfsWz9tCe4nFjsuS0nTLF';
+    opts.headers['api-key'] = API_KEY;
     opts.headers['method'] = 'GET';
 
     getPSI( opts, function(err, result){    
